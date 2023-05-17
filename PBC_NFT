@@ -1,0 +1,112 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract PepeBillionaireClub is ERC721Enumerable, Ownable {
+    uint256 public constant MAX_SUPPLY = 333;
+    uint256 public constant MINT_PRICE = 0.1 ether;
+
+    uint256 private _reserved = 30;
+    uint256 private _tokenIdCounter = 0;
+
+    // Store rarity and trait information for each NFT
+    mapping(uint256 => uint256) private _rarity;
+    mapping(uint256 => uint256[]) private _traits;
+
+    constructor() ERC721("Pepe Billionaire Club", "$PBC") {}
+
+    // Mint the NFTs
+    function mint(uint256 numberOfTokens) external payable {
+        require(numberOfTokens > 0, "Number of tokens must be greater than 0");
+        require(
+            _tokenIdCounter + numberOfTokens <= MAX_SUPPLY - _reserved,
+            "Exceeds maximum supply"
+        );
+        require(
+            msg.value >= MINT_PRICE * numberOfTokens,
+            "Insufficient ETH sent"
+        );
+
+        for (uint256 i = 0; i < numberOfTokens; i++) {
+            _safeMint(msg.sender, _tokenIdCounter);
+            _rarity[_tokenIdCounter] = getRandomRarity();
+            _traits[_tokenIdCounter] = getRandomTraits();
+
+            _tokenIdCounter++;
+        }
+    }
+
+    // Get the rarity of an NFT
+    function getRarity(uint256 tokenId) external view returns (uint256) {
+        require(_exists(tokenId), "Token ID does not exist");
+        return _rarity[tokenId];
+    }
+
+    // Get the traits of an NFT
+    function getTraits(uint256 tokenId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        require(_exists(tokenId), "Token ID does not exist");
+        return _traits[tokenId];
+    }
+
+    // Get the total supply of minted NFTs
+    function totalSupply() public view returns (uint256) {
+        return _tokenIdCounter;
+    }
+
+    // Get the number of remaining NFTs available for minting
+    function remainingSupply() public view returns (uint256) {
+        return MAX_SUPPLY - _reserved - _tokenIdCounter;
+    }
+
+    // Generate a random rarity for an NFT
+    function getRandomRarity() private view returns (uint256) {
+        // Your logic to generate random rarity here
+        // Return a value representing the rarity level
+    }
+
+    // Generate an array of random traits for an NFT
+    function getRandomTraits() private view returns (uint256[] memory) {
+        // Your logic to generate random traits here
+        // Return an array of trait values
+    }
+
+    // Reserve some NFTs for special purposes
+    function reserve(uint256 numberOfTokens) external onlyOwner {
+        require(
+            numberOfTokens <= _reserved,
+            "Exceeds the reserved supply"
+        );
+
+        for (uint256 i = 0; i < numberOfTokens; i++) {
+            _safeMint(msg.sender, _tokenIdCounter);
+            _rarity[_tokenIdCounter] = getRandomRarity();
+            _traits[_tokenIdCounter] = getRandomTraits();
+
+            _reserved--;
+            _tokenIdCounter++;
+        }
+    }
+
+// Withdraw contract balance to the owner's address
+    function withdraw() external onlyOwner {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "Contract balance is zero");
+        payable(owner()).transfer(balance);
+    }
+    
+    // Override base function to allow for contract URI
+    function _baseURI() internal view virtual override returns (string memory) {
+        return "https://api.pepebillionaireclub.com/nfts/";
+    }
+    
+    // Optional: Set a new base URI for the contract
+    function setBaseURI(string memory baseURI) external onlyOwner {
+        _setBaseURI(baseURI);
+    }
+}
