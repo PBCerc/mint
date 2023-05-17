@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract Royalties is Ownable {
+    struct RoyaltyInfo {
+        address payable recipient;
+        uint256 percentage;
+    }
+
+    mapping(uint256 => RoyaltyInfo[]) private _royalties;
+
+    event RoyaltySet(uint256 indexed tokenId, address indexed recipient, uint256 percentage);
+
+    // Set the royalty information for a specific token
+    function setRoyalty(uint256 tokenId, address payable recipient, uint256 percentage) external onlyOwner {
+        require(recipient != address(0), "Invalid recipient address");
+        require(percentage <= 100, "Percentage should be less than or equal to 100");
+
+        _royalties[tokenId].push(RoyaltyInfo(recipient, percentage));
+        emit RoyaltySet(tokenId, recipient, percentage);
+    }
+
+    // Get the royalty information for a specific token
+    function getRoyalties(uint256 tokenId) external view returns (RoyaltyInfo[] memory) {
+        return _royalties[tokenId];
+    }
+
+    // Calculate and distribute royalties to the recipients
+    function distributeRoyalties(uint256 tokenId, uint256 salePrice) external {
+        RoyaltyInfo[] memory royalties = _royalties[tokenId];
+        require(royalties.length > 0, "No royalties set for the token");
+
+        for (uint256 i = 0; i < royalties.length; i++) {
+            RoyaltyInfo memory royalty = royalties[i];
+            uint256 amount = (salePrice * royalty.percentage) / 100;
+            royalty.recipient.transfer(amount);
+        }
+    }
+}
