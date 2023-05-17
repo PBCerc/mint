@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract AccessControl is Ownable {
+    mapping(address => bool) private _admins;
+    mapping(address => bool) private _minters;
+    mapping(address => bool) private _burners;
+
+    event AdminAdded(address indexed account);
+    event AdminRemoved(address indexed account);
+    event MinterAdded(address indexed account);
+    event MinterRemoved(address indexed account);
+    event BurnerAdded(address indexed account);
+    event BurnerRemoved(address indexed account);
+
+    modifier onlyAdmin() {
+        require(_admins[msg.sender], "Only admins can call this function");
+        _;
+    }
+
+    modifier onlyMinter() {
+        require(_minters[msg.sender], "Only minters can call this function");
+        _;
+    }
+
+    modifier onlyBurner() {
+        require(_burners[msg.sender], "Only burners can call this function");
+        _;
+    }
+
+    function addAdmin(address account) external onlyOwner {
+        require(account != address(0), "Invalid account address");
+        require(!_admins[account], "Account is already an admin");
+
+        _admins[account] = true;
+        emit AdminAdded(account);
+    }
+
+    function removeAdmin(address account) external onlyOwner {
+        require(account != address(0), "Invalid account address");
+        require(_admins[account], "Account is not an admin");
+
+        _admins[account] = false;
+        emit AdminRemoved(account);
+    }
+
+    function addMinter(address account) external onlyAdmin {
+        require(account != address(0), "Invalid account address");
+        require(!_minters[account], "Account is already a minter");
+
+        _minters[account] = true;
+        emit MinterAdded(account);
+    }
+
+    function removeMinter(address account) external onlyAdmin {
+        require(account != address(0), "Invalid account address");
+        require(_minters[account], "Account is not a minter");
+
+        _minters[account] = false;
+        emit MinterRemoved(account);
+    }
+
+    function addBurner(address account) external onlyAdmin {
+        require(account != address(0), "Invalid account address");
+        require(!_burners[account], "Account is already a burner");
+
+        _burners[account] = true;
+        emit BurnerAdded(account);
+    }
+
+    function removeBurner(address account) external onlyAdmin {
+        require(account != address(0), "Invalid account address");
+        require(_burners[account], "Account is not a burner");
+
+        _burners[account] = false;
+        emit BurnerRemoved(account);
+    }
+
+    function isAdmin(address account) external view returns (bool) {
+        return _admins[account];
+    }
+
+    function isMinter(address account) external view returns (bool) {
+        return _minters[account];
+    }
+
+    function isBurner(address account) external view returns (bool) {
+        return _burners[account];
+    }
+}
